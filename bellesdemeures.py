@@ -13,6 +13,7 @@ import random
 import datetime
 import numpy as np
 
+# Define User Agent
 ua = shadow_useragent.ShadowUserAgent()
 # my_user_agent = ua.android
 my_user_agent = ua.percent(0.03) 
@@ -23,13 +24,15 @@ headers = {
 
 class BellesDemeures(object):
 
-    ### Crée un objet soup à partir de l'url d'une page et son numéro de page 
-    ### Marche pour une unique page 
+    """
+    Create an object soup by getting url of a page and it number 
+    """
 
-    def getDatas_bypage(self,nb_page):
+    def get_data_by_page(self,nb_page):
 
         # Bordeaux
         # url = f'https://www.bellesdemeures.com/recherche?ci=330063&idtt=2&tri=Selection&page={nb_page}'
+
         # Gironde 
         url = f'https://www.bellesdemeures.com/recherche?cp=33&idtt=2&tri=Selection&page={nb_page}'
         html = requests.get(url, headers=headers)
@@ -37,12 +40,15 @@ class BellesDemeures(object):
 
 
     def scrap_pages(self,nbpage_start,nb_pages):
+
         nb_annonces = 0
         time_total = 0
         list_datas = []
         x = [i for i in range(nbpage_start, nbpage_start+nb_pages)]
+
         print(f"_________________________________________")
         print(f"####### SCRAPPING IMMO ###########")
+
         for nb_page in x :
             start_time = time.time()
             time.sleep(random.randrange(1,3))
@@ -57,19 +63,21 @@ class BellesDemeures(object):
         print(f"Total annonces : {nb_annonces} annonces ")
         print(f"Temps total : {round((time_total/60),2)} minutes")
 
-        #### Verifier qu'il existe ou non un fichier immos_gir_date.csv et en fonction de ca on choisit soit wb , soit ab 
+        # Verify if immos_gir_date.csv exists and choose wb or ab 
         if os.path.exists(f'immos_gir_{datetime.date.today()}.csv'):
             self.write_csv('ab',list_datas)
         else:
             self.write_csv('wb',list_datas)
 
 
-    ### Ecriture dans un fichier .csv
-    ### Mode wb crée un fichier et ecrit dedans , ab ajoute a un fichier existant
-    ### list_datas , donnés a inscrire dans le csv
-  
     def write_csv(self,mode,list_datas):
-        with open(f"immos_gir_{datetime.date.today()}.csv", mode) as csvfile:
+
+        """ Write to a csv file """
+
+        ### "wb" create a file and write into it / "ab" add data to an existing file
+        ### list_datas = data to write in the csv file
+
+        with open(f"immos_gir_{datetime.date.today()}.csv", mode) as csvfile:        
             fieldnames = ['typeof','price','surface','field_surface','rooms','bedrooms','terrace','balcony','pool','parking','localisation','agency','link']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             if mode == 'wb':
@@ -79,49 +87,66 @@ class BellesDemeures(object):
                     writer.writerow(row)
 
 
-    # Fonction qui cherche une occurence dans le tableau moreinfos_split et récupere le nombre associé ( ex 2 , pour 2 parkings)
-    # NA quand non renseigné comme  pour le terrain ( peut etre pas de terrain comme pour les apparts ) ou terrain pas assez grand pour etre mis en avant dans l'annonce
-    # field_surface , bedrooms , balcony , parking 
-
     def search_nb_spec(self,specs,spec):
+
+        """
+        Searches for an occurrence in the moreinfos_split table and retrieves the associated number (eg 2, for 2 parking lots)
+        NA when not indicated as for the land (may not be land as for the apartments) or land not large enough to be highlighted in the annonce
+        field_surface , bedrooms , balcony , parking 
+        """
+
         nbspec = "NA"
+
         for info in specs :
+            # Search for the spec in the split data
             x = re.search(spec,info.strip())
-            if(x): # cherche la spec dans les infos splités
+            if(x):
                 nbspec_str = re.findall("[0-9]+",info.strip())
                 nbspec = nbspec_str[0]
         return nbspec
 
-    # il n'est pas indiqué " 1 Piscine " mais "Piscine" quand il y'a une piscine 
-    # pool , terrace
+
     def search_spec(self,specs,spec):
+
+        # It does not say "1 Pool" but "Pool" when there is a pool
+        # pool , terrace
+
         spec_exist = "NON"
+
         for info in specs :
+            # search for spec in splitted infos
             x = re.search(spec,info.strip())
-            if(x): # cherche la spec dans les infos splités
+            if(x): 
                 spec_exist = "OUI"
         return spec_exist
+
 
     def scrap_annonces(self):
 
         j = 0
         properties_list = []
-
         listAnnonces = self.soup.find('section', {'class': 'annonces'})
 
+        # Scrap for each annonce
         for annonce in listAnnonces.find_all('div', {'class': 'detailsWrap'}):
+
+            # Link
             link = annonce.find('a')['href']
+
+            # Type
             typeof = annonce.find('div', {'class': 'type'}).text
 
-            # On supprime le symbole " € " du prix 
+            # Price
             price_str = annonce.find('div', {'class': 'price'}).text
+            # Delete symbol "€"
             price = price_str.replace("€", "").strip()
 
-            ### Certaines annonces ne sont pas sous le format classique Pieces - Surface , il n'y a que le nombre de Pieces ou que la Surface , ou meme parfois rien
-            ### Cependant meme quand c'est vide la div class specs est présente 
-
+            # Specs (Rooms, Surface)
             specs = annonce.find('div', {'class': 'specs'}).text
 
+            # Some annonces don't have the same classic format rooms - surface... 
+            # We can have only the number of rooms or only the surface , or sometimes none of them
+            # Even if we dont have values for rooms and surface, the div class="specs" is in the code 
             if len(specs.strip()) == 0:
                 rooms = "NA"
                 surface = "NA"
@@ -130,26 +155,27 @@ class BellesDemeures(object):
                 rooms = self.search_nb_spec(specs_split,"Pièces")
                 surface = self.search_nb_spec(specs_split,"m²")
 
-            ##############
-
+            # Localisation
             localisation = annonce.find('div', {'class': 'location'}).text
-            agency = annonce.find('div', {'class': 'agency'}).text.strip()
 
-            # Certaines annonces n'ont pas de div more avec des infos supplémentaires
-            # Dans le cas ou le bloc n'existe pas on passe toutes les infos contenues habituellement en NA ou NON suivant le format 
+            # Agency
+            agency = annonce.find('div', {'class': 'agency'}).text.strip()
             
+            # More (Field Surface, Bedrooms, Balcony, Parking)
             moreinfos = annonce.find('div', {'class': 'more'})
+
+            # Some annonces don't have div moreinfos
+            # If moreinfo doesn't exists, we complete infos by NA or NON depending on the format
             if (moreinfos):
                 moreinfos = annonce.find('div', {'class': 'more'}).text
 
-                # Split du bloc moreinfos
+                # Split moreinfos
                 moreinfos_split = moreinfos.split("\n")
 
                 field_surface = self.search_nb_spec(moreinfos_split,"Terrain")
                 bedrooms = self.search_nb_spec(moreinfos_split,"chambre")
                 balcony = self.search_nb_spec(moreinfos_split,"Balcon")
                 parking = self.search_nb_spec(moreinfos_split,"parking")
-
                 pool = self.search_spec(moreinfos_split,"Piscine")
                 terrace = self.search_spec(moreinfos_split,"Terrasse")
 
@@ -174,10 +200,11 @@ class BellesDemeures(object):
                     'localisation' : localisation,
                     'agency' : agency,
                     'link' : link}
+
             properties_list.append(data)
             j += 1
             
-            ## DEBUG
+            ### DEBUG ###
             # print(f"Type de bien : {typeof}")
             # print(f"Prix : {price}")
             # print(f"Surface du bien : {surface}")
@@ -193,20 +220,25 @@ class BellesDemeures(object):
             # print(f"Lien : {link}")
             # print(f"_________________________________________")
 
-
         return j,properties_list
 
 
-    ## Fonction pour arreter le scrapper toutes les 5 pages et faire une pause de x secondes
     def pause_scrapper(self,nb_page,duration):
+
+        """
+        Stop the scrapper every 5 pages and take a break of x seconds
+        """
+
         if nb_page % 5 == 0 :
             print(f"*** Pause de {duration} secondes ***")
             time.sleep(duration)
             
-     
 
 bd = BellesDemeures()
-### Scrappe de une ou plusieurs pages en partant d'une page donnée et ecriture dans un .csv
+
+"""
+Scraping of one or many pages, starting to one given page and write data to a csv file
+"""
 # bd.scrap_pages(1,25)
 # bd.scrap_pages(26,25)
 # bd.scrap_pages(51,25)
