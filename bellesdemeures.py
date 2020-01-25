@@ -31,14 +31,15 @@ class BellesDemeures(object):
     def get_data_by_page(self,nb_page):
 
         # Bordeaux
-        # url = f'https://www.bellesdemeures.com/recherche?ci=330063&idtt=2&tri=Selection&page={nb_page}'
-
+        # url = f'https://www.bellesdemeures.com/recherche?ci=330063&idtt=2&tri=Selection&page={nb_page}
         # Gironde 
-        url = f'https://www.bellesdemeures.com/recherche?cp=33&idtt=2&tri=Selection&page={nb_page}'
+        # url = f'https://www.bellesdemeures.com/recherche?cp=33&idtt=2&tri=Selection&page={nb_page}'
+
+        # Paris
+        url = f'https://www.bellesdemeures.com/recherche?cp=75&idtt=2&tri=Selection&page={nb_page}'
         html = requests.get(url, headers=headers)
         self.soup = BeautifulSoup(html.content, 'html.parser')
-
-
+    
     def scrap_pages(self,nbpage_start,nb_pages):
 
         nb_annonces = 0
@@ -52,7 +53,7 @@ class BellesDemeures(object):
         for nb_page in x :
             start_time = time.time()
             time.sleep(random.randrange(1,3))
-            self.getDatas_bypage(nb_page)
+            self.get_data_by_page(nb_page)
             j , datas = self.scrap_annonces()
             nb_annonces = nb_annonces + j
             list_datas.append(datas)
@@ -61,10 +62,11 @@ class BellesDemeures(object):
             # self.pause_scrapper(nb_page,20)
         print(f"_________________________________________")
         print(f"Total annonces : {nb_annonces} annonces ")
-        print(f"Temps total : {round((time_total/60),2)} minutes")
+        time_total_format = time.strftime("%H:%M:%S", time.gmtime(time_total))
+        print(f"Temps total : {time_total_format}")
 
-        # Verify if immos_gir_date.csv exists and choose wb or ab 
-        if os.path.exists(f'immos_gir_{datetime.date.today()}.csv'):
+        # Verify if immos_paris_date.csv exists and choose wb or ab 
+        if os.path.exists(f'immos_paris_{datetime.date.today()}.csv'):
             self.write_csv('ab',list_datas)
         else:
             self.write_csv('wb',list_datas)
@@ -77,8 +79,8 @@ class BellesDemeures(object):
         ### "wb" create a file and write into it / "ab" add data to an existing file
         ### list_datas = data to write in the csv file
 
-        with open(f"immos_gir_{datetime.date.today()}.csv", mode) as csvfile:        
-            fieldnames = ['typeof','price','surface','field_surface','rooms','bedrooms','terrace','balcony','pool','parking','localisation','agency','link']
+        with open(f"immos_paris_{datetime.date.today()}.csv", mode) as csvfile:        
+            fieldnames = ['typeof','surface','field_surface','rooms','bedrooms','terrace','balcony','pool','parking','district','nb_of_ad','agency','link','price']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             if mode == 'wb':
                 writer.writeheader()
@@ -101,8 +103,8 @@ class BellesDemeures(object):
             # Search for the spec in the split data
             x = re.search(spec,info.strip())
             if(x):
-                nbspec_str = re.findall("[0-9]+",info.strip())
-                nbspec = nbspec_str[0]
+                nbspec_list = re.findall("[0-9]+",info.strip())
+                nbspec = nbspec_list[0]
         return nbspec
 
 
@@ -119,9 +121,21 @@ class BellesDemeures(object):
             if(x): 
                 spec_exist = "OUI"
         return spec_exist
-
+    
+    def search_nb_ad(self,link):
+        """
+        takes an url and returns the ad number
+        """
+        link_split = link.split('/')
+        for i in link_split:
+                x = re.search('^[0-9]+$',i)
+                if(x):
+                    nb_of_ad = i
+        return nb_of_ad
 
     def scrap_annonces(self):
+        # debug 
+        # stop_scrap = 1
 
         j = 0
         properties_list = []
@@ -130,8 +144,24 @@ class BellesDemeures(object):
         # Scrap for each annonce
         for annonce in listAnnonces.find_all('div', {'class': 'detailsWrap'}):
 
+            # # scrap only one advertisement for debug
+            # if stop_scrap > 1:
+            #     break
+
+            #We check that the city is indeed Paris, if it is the case we recover the number of district, 
+            #if not we pass to the next advertisement.
+
+            localisation = annonce.find('div', {'class': 'location'}).text
+            x = re.search('Paris',localisation)
+            if not x:
+                continue
+            district_list = re.findall("[0-9]+",localisation)
+            district = int(district_list[0])
+
             # Link
             link = annonce.find('a')['href']
+            nb_of_ad = self.search_nb_ad(link)
+ 
 
             # Type
             typeof = annonce.find('div', {'class': 'type'}).text
@@ -154,9 +184,6 @@ class BellesDemeures(object):
                 specs_split = specs.split("•")
                 rooms = self.search_nb_spec(specs_split,"Pièces")
                 surface = self.search_nb_spec(specs_split,"m²")
-
-            # Localisation
-            localisation = annonce.find('div', {'class': 'location'}).text
 
             # Agency
             agency = annonce.find('div', {'class': 'agency'}).text.strip()
@@ -188,7 +215,6 @@ class BellesDemeures(object):
                 terrace = "NON"
 
             data = {'typeof' : typeof,
-                    'price' : price,
                     'surface' : surface,
                     'field_surface' : field_surface,
                     'rooms' : rooms,
@@ -197,9 +223,11 @@ class BellesDemeures(object):
                     'balcony' : balcony,
                     'pool' : pool,
                     'parking' : parking,
-                    'localisation' : localisation,
+                    'district' : district,
+                    'nb_of_ad' : nb_of_ad,
                     'agency' : agency,
-                    'link' : link}
+                    'link' : link,
+                    'price' : price}
 
             properties_list.append(data)
             j += 1
@@ -215,10 +243,13 @@ class BellesDemeures(object):
             # print(f"Balcon : {balcony}")
             # print(f"Piscine : {pool}")
             # print(f"Parking : {parking}")
-            # print(f"Localisation : {localisation}")
+            # print(f"Arrondissement: {district}")
+            # print(f"Numéro annonce : {nb_of_ad}")
             # print(f"Agence : {agency}")
             # print(f"Lien : {link}")
             # print(f"_________________________________________")
+
+            # stop_scrap += 1 
 
         return j,properties_list
 
@@ -239,7 +270,11 @@ bd = BellesDemeures()
 """
 Scraping of one or many pages, starting to one given page and write data to a csv file
 """
-# bd.scrap_pages(1,25)
+# 138 pages
+
+bd.scrap_pages(1,25)
 # bd.scrap_pages(26,25)
 # bd.scrap_pages(51,25)
-bd.scrap_pages(76,2)
+# bd.scrap_pages(76,25)
+# bd.scrap_pages(101,25)
+# bd.scrap_pages(126,13)
