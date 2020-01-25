@@ -80,7 +80,7 @@ class BellesDemeures(object):
         ### list_datas = data to write in the csv file
 
         with open(f"immos_paris_{datetime.date.today()}.csv", mode) as csvfile:        
-            fieldnames = ['typeof','surface','field_surface','rooms','bedrooms','terrace','balcony','pool','parking','district','nb_of_ad','agency','link','price']
+            fieldnames = ['typeof','surface','field_surface','rooms','bedrooms','terrace','balcony','pool','parking','district','id','agency','link','price']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             if mode == 'wb':
                 writer.writeheader()
@@ -130,8 +130,8 @@ class BellesDemeures(object):
         for i in link_split:
                 x = re.search('^[0-9]+$',i)
                 if(x):
-                    nb_of_ad = i
-        return nb_of_ad
+                    id = i
+        return id
 
     def scrap_annonces(self):
         # debug 
@@ -160,7 +160,7 @@ class BellesDemeures(object):
 
             # Link
             link = annonce.find('a')['href']
-            nb_of_ad = self.search_nb_ad(link)
+            id = self.search_nb_ad(link)
  
 
             # Type
@@ -224,7 +224,7 @@ class BellesDemeures(object):
                     'pool' : pool,
                     'parking' : parking,
                     'district' : district,
-                    'nb_of_ad' : nb_of_ad,
+                    'id' : id,
                     'agency' : agency,
                     'link' : link,
                     'price' : price}
