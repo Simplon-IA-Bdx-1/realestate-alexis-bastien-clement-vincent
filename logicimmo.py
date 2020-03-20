@@ -1,13 +1,20 @@
 import scrapy
 import shadow_useragent
+import csv
 import re
 from bs4 import BeautifulSoup
 import os
 from os import path
+import pandas as pd
 
 class LogicImmoScraping(scrapy.Spider):
 
+    offers_scrap_nb = 0
+    offers_already_listed = 0
+
     name = 'logic-immo'
+    name_csv = "logic_immo.csv"
+    
 
     # Define User Agent
     ua = shadow_useragent.ShadowUserAgent()
@@ -20,12 +27,17 @@ class LogicImmoScraping(scrapy.Spider):
         'FEED_FORMAT': 'csv'
     }
 
-    offers_scrap_nb = 0
+    fieldnames = ['id','area','rooms','district','price']
 
-    if path.isfile('logic_immo.csv'):
-        os.remove("logic_immo.csv")
-        print("previous version of the dataset deleted")
-
+    if path.isfile(name_csv):
+        mode = 'a'
+        csv_file = open(name_csv,mode,newline='')
+        writer = csv.DictWriter(csv_file, fieldnames)
+    else:
+        mode = 'w'
+        csv_file = open(name_csv,mode,newline='')
+        writer = csv.DictWriter(csv_file, fieldnames)
+        writer.writeheader()
 
     def start_requests(self):
 
@@ -86,10 +98,22 @@ class LogicImmoScraping(scrapy.Spider):
                 'price': int(price)
             }
             
-            self.offers_scrap_nb += 1
-            yield scraped_info
+            # Create a new csv
+            if self.mode == 'w':
+                self.writer.writerow(scraped_info)
+                self.offers_scrap_nb += 1 
+            else:
+                # Open csv with scraped data
+                df = pd.read_csv(self.name_csv)
+                # Check if offer is already listed in our dataset
+                if any(df['id'] == scraped_info['id']):
+                    self.offers_already_listed += 1
+                else:
+                    self.writer.writerow(scraped_info)
+                    self.offers_scrap_nb += 1
 
     def closed(self,response):
         print("End of Scraping")
-        print(f"{self.offers_scrap_nb} offers")
+        print(f"{self.offers_scrap_nb} offers added")
+        print(f"{self.offers_already_listed} offers already listed in .csv")
 
