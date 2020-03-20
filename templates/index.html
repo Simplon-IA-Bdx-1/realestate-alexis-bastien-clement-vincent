@@ -16,25 +16,19 @@
 
             <!-- Main Input For Receiving Query to our ML -->
             <form action="{{ url_for('predict')}}"method="post">
-                <input type="number" name="typeof" placeholder="type" min="1" max="5" required="required" />
-                <input type="number" name="surface" placeholder="surface" required="required" />
-                <input type="number" name="field_surface" placeholder="field surface" required="required" />
-                <input type="number" name="rooms" placeholder="number of rooms" required="required" />
-                <input type="number" name="bedrooms" placeholder="number of bedrooms" required="required" />
-                <input type="number" name="balcony" placeholder="balcony" min="0" max="1"required="required" />
-                <input type="number" name="parking" placeholder="parking" required="required" />
-                <input type="number" name="terrace" placeholder="terrace" min="0" max="1" required="required" />
-                <input type="number" name="pool" placeholder="pool" min="0" max="1" required="required" />
+                <input type="number" name="area" placeholder="Area" required="required" />
+                <input type="number" name="rooms" placeholder="Number of rooms" required="required" />
+                <br>
                 <div class="localisation-form">
-                    <label for="localisation">Choose a localisation</label>
+                    <label for="localisation">District</label>
                     <select name=cities method="GET" action="/">
                         {% for city in cities %}
                         <option value= "{{city}}" SELECTED>{{city}}</option>"
                         {% endfor %}
                     </select>
-
                 </div>
-                <button type="submit" class="btn btn-primary btn-block btn-large">Predict House Price</button>
+                <br>
+                <button type="submit" class="btn btn-primary btn-block btn-large">Predict Price</button>
             </form>
 
             <br>
