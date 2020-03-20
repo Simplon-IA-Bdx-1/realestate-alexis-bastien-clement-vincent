@@ -2,6 +2,9 @@
 # Created by https://www.gitignore.io/api/macos,dotenv,python,windows,jupyternotebooks,visualstudiocode
 # Edit at https://www.gitignore.io/?templates=macos,dotenv,python,windows,jupyternotebooks,visualstudiocode
 
+### csv ###
+*.csv
+
 ### dotenv ###
 .env
 
