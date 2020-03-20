@@ -1,15 +1,6 @@
 
-typeof : appart , maison 
-price : prix
-surface : surface du bien ou NA si pas d'infos
-field_surface : surface du terrain si renseigné  ou NA , ne veut pas forcement dire qu'il n'y a pas de terrain , ils indiquent que les terrains dont la taille est 
-grande pour attirer le client , mais dans le cas d'un appartament NA = pas de terrain , il faudra faire le tri
-rooms : nombres de pieces ou NA si pas d'infos
-bedrooms : nombres de chambres , apparament toujours renseigné
-terrace : terrasse OUI / NON 
-balcony : Balcon nombre de balcons ou NA 
-pool : piscine OUI / NON , le format de l'annonce annonce juste la présence d'une piscine pas le nombre
-parking : parking , nombre de parking ou NA 
-localisation : Lieu
-agency : agence
-link : lien vers l'annonce du bien sur le site 
+id : identifiant du bien 
+area : surface du bien
+rooms : nombres de pieces
+district : arrondissement (région parisienne)
+price : prix du bien
