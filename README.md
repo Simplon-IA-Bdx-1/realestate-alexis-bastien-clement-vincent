@@ -16,4 +16,12 @@ Predict sales prices for real estate
 
 `https://github.com/Simplon-IA-Bdx-1/realestate-alexis-bastien-clement-vincent.git
 `
+
+### Run scraper
+
+Open terminal and run :
+
+`scrapy runspider logicimmo.py
+`
+
 ### Notebooks
