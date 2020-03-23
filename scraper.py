@@ -1,13 +1,17 @@
 import scrapy
 import shadow_useragent
-import csv
-import re
-from bs4 import BeautifulSoup
-import os
-from os import path
 import pandas as pd
+import csv
+import os
+import re
+import time
+
+from bs4 import BeautifulSoup
+from os import path
 
 class LogicImmoScraping(scrapy.Spider):
+
+    """ Scraper logic-immo.com """
 
     offers_scrap_nb = 0
     offers_already_listed = 0
@@ -113,7 +117,11 @@ class LogicImmoScraping(scrapy.Spider):
                     self.offers_scrap_nb += 1
 
     def closed(self,response):
+
+        interval = time.time() - self.start_scrap_time
+
         print("End of Scraping")
         print(f"{self.offers_scrap_nb} offers added")
         print(f"{self.offers_already_listed} offers already listed in .csv")
+        print(f'Elapsed time for scraping : {round(interval,2)} seconds')
 
