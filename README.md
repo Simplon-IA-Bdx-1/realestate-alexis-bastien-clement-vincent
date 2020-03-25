@@ -1,9 +1,5 @@
 # Realestate
--- 
-
 [![Generic badge](https://img.shields.io/badge/Project-MachineLearning-<COLOR>.svg)](https://shields.io/)
-
-
 
 Realestate is a End-to-End Machine Learning Project which the goal is to predict sales prices for real estate.
 <br>
