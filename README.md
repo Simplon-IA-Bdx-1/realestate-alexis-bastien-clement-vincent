@@ -86,6 +86,10 @@ https://localhost:5000
 ##### curl
 Open a new terminal and make your request like the following example
 
+```
+curl -i -H "Content-type: application/json" -X POST -d '{"area":21, "rooms":1, "district":15}' http://localhost:5000/api
+```
+
 ![](https://cdn.discordapp.com/attachments/638735265262862376/690108402004787214/API_Realestate.png)
 <br>
 
