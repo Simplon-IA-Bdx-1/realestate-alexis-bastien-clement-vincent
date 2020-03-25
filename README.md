@@ -1,5 +1,6 @@
 # Realestate
---
+-- 
+
 [![Generic badge](https://img.shields.io/badge/Project-Machine Learning-<COLOR>.svg)](https://shields.io/)
 
 
@@ -45,6 +46,7 @@ conda activate realestate
 ```
 
 <br>
+
 ## How it works
 1. The scraper.py will collect data from the website logic-immo.com and export scraped data to a csv with four features id, surface, rooms, price.
 2. The model.py will search best parameters and choose the best model to make the prediction. Every log is available on mlflow with `mlflow ui`
