@@ -1,7 +1,7 @@
 # Realestate
 -- 
 
-[![Generic badge](https://img.shields.io/badge/Project-Machine Learning-<COLOR>.svg)](https://shields.io/)
+[![Generic badge](https://img.shields.io/badge/Project-MachineLearning-<COLOR>.svg)](https://shields.io/)
 
 
 
