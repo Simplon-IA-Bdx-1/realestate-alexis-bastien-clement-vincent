@@ -1,10 +1,13 @@
 import numpy as np
 from flask import Flask, request, jsonify, render_template, make_response
 from flask_restful import reqparse, abort, Api, Resource
+from sklearn.preprocessing import MinMaxScaler,MaxAbsScaler,StandardScaler,RobustScaler,Normalizer
 import pickle
+import pandas as pd
 
 app = Flask(__name__)
 model = pickle.load(open('realestate_model.pickle', 'rb'))
+scaler = pickle.load(open('best_scaler.pickle', 'rb'))
 
 # argument parsing
 parser = reqparse.RequestParser()
@@ -23,37 +26,32 @@ def api_model():
         'district': request.json['district'],
     }
 
-    # Get requests of the user
+   # Load zip codes & scaler
+    cities = pickle.load(open('district_values.pickle', 'rb'))
+    scaler = pickle.load(open('best_scaler.pickle', 'rb'))
+
+    # Get form answers of the user
     int_features = [x for x in request.json.values()]
+    
 
     # Delete last item of the list which is the zip code
     int_features.pop()
+    dict_features = {
+        'area':  [int(request.json['area'])],
+        'rooms': [int(request.json['rooms'])]
+    }
 
-    # Zip code requested by the user 
-    city_selected = request.json['district']
-    len_array = len(cities) + 1
-
-    # Get index of the zip code in the zip code list
-    index_city = cities.index(f'{city_selected}')
-
-    # Create a list of len = number of zip code
-    list_city = [0 for i in range(1, len_array)]
-
-    # Zip code selected = 1
-    list_city[index_city] = 1
-
-    # Add zip code list values to int_features
-    int_features.extend(list_city)
-    final_features = [np.array(int_features)]
-
-    # Predict with loaded model
-    prediction = np.exp(model.predict(final_features))
-
-    # Format of the output prediction
-    pred_text = int(prediction[0])
-
-    # Create JSON object
-    output = {'predict price': pred_text}
+    city_selected = request.json['cities']
+    dict_localisation = { i : [0] for i in cities }
+    district_selected = request.json['cities']
+    dict_localisation[district_selected] = 1
+    dict_features.update(dict_localisation)
+    df_pred = pd.DataFrame(dict_features)
+    X_new = df_pred.values
+    X_new_scale = scaler.transform(X_new)
+    pred = model.predict(X_new_scale)
+    price_pred = int(np.exp(pred[0]))
+    output = price_pred
     
     return output
 
@@ -71,40 +69,34 @@ def dropdown():
 @app.route('/predict',methods=['POST'])
 def predict():
 
-    # Load zip codes
+    # Load zip codes & scaler
     cities = pickle.load(open('district_values.pickle', 'rb'))
+    scaler = pickle.load(open('best_scaler.pickle', 'rb'))
 
     # Get form answers of the user
     int_features = [x for x in request.form.values()]
+    
 
     # Delete last item of the list which is the zip code
     int_features.pop()
+    dict_features = {
+        'area':  [int(int_features[0])],
+        'rooms': [int(int_features[1])]
+    }
 
-    # Result of the selected zip code in form
     city_selected = request.form['cities']
-    len_array = len(cities) + 1
-
-    # Get index of the zip code in the zip code list
-    index_city = cities.index(f'{city_selected}')
-
-    # Create a list of len = number of zip code
-    list_city = [0 for i in range(1, len_array)]
-
-    # Zip code selected = 1
-    list_city[index_city] = 1
-
-    # Add zip code list values to int_features
-    int_features.extend(list_city)
-    final_features = [np.array(int_features)]
-
-    # Predict with loaded model
-    prediction = np.exp(model.predict(final_features))
-
-    # Format of the output prediction
-    output = int(prediction[0])
+    dict_localisation = { i : [0] for i in cities }
+    district_selected = request.form['cities']
+    dict_localisation[district_selected] = 1
+    dict_features.update(dict_localisation)
+    df_pred = pd.DataFrame(dict_features)
+    X_new = df_pred.values
+    X_new_scale = scaler.transform(X_new)
+    pred = model.predict(X_new_scale)
+    price_pred = int(np.exp(pred[0]))
+    output = price_pred
 
     return render_template('index.html', prediction_text='{} euros'.format(output))
-
 
 if __name__ == "__main__":
     app.run(debug=True)
