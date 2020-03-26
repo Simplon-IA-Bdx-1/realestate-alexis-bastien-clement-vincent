@@ -20,12 +20,6 @@ def api_model():
     if not request.json or not 'area' in request.json:
         abort(400)
 
-    input = {
-        'area': request.json['area'],
-        'rooms': request.json['area'],
-        'district': request.json['district'],
-    }
-
    # Load zip codes & scaler
     cities = pickle.load(open('district_values.pickle', 'rb'))
     scaler = pickle.load(open('best_scaler.pickle', 'rb'))
@@ -41,9 +35,9 @@ def api_model():
         'rooms': [int(request.json['rooms'])]
     }
 
-    city_selected = request.json['cities']
+    city_selected = request.json['district']
     dict_localisation = { i : [0] for i in cities }
-    district_selected = request.json['cities']
+    district_selected = request.json['district']
     dict_localisation[district_selected] = 1
     dict_features.update(dict_localisation)
     df_pred = pd.DataFrame(dict_features)
