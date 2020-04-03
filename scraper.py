@@ -18,19 +18,15 @@ class LogicImmoScraping(scrapy.Spider):
 
     name = 'logic-immo'
     name_csv = "logic_immo.csv"
+    start_scrap_time = time.time()
     
-
     # Define User Agent
     ua = shadow_useragent.ShadowUserAgent()
     my_user_agent = ua.percent(0.03) 
     headers = {
     'User-Agent': '{}'.format(my_user_agent)
     }
-    custom_settings={
-        'FEED_URI': "logic_immo.csv",
-        'FEED_FORMAT': 'csv'
-    }
-
+    
     fieldnames = ['id','area','rooms','district','price']
 
     if path.isfile(name_csv):
@@ -117,9 +113,7 @@ class LogicImmoScraping(scrapy.Spider):
                     self.offers_scrap_nb += 1
 
     def closed(self,response):
-
         interval = time.time() - self.start_scrap_time
-
         print("End of Scraping")
         print(f"{self.offers_scrap_nb} offers added")
         print(f"{self.offers_already_listed} offers already listed in .csv")
